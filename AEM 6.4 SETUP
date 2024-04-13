@@ -1,0 +1,26 @@
+	REQUIREMENTS:-
+  AEM 6.4 JAR FILE, JAVA-JDK-08, ECLIPSE , MAVEN VERSION - 3.9.0 (latest),NODE JS
+  
+      JAVA -8 SETUP :-      https://youtu.be/kULFRcxzOLM?si=Jw1fefyJtyddUEYb 
+	MAVEN VERSION SETUP :-   https://youtu.be/hV1OWzYpzxo?si=ImooZUPApS2jTILE
+	  AEM SETUP :- https:    //www.youtube.com/watch?v=b_30dyXN77I
+       NODE JS SETUP :-       https: //youtu.be/J8ZPZq_34aY?si=v8W7Ir3CO6_lJ6J_
+	  Field glass(Timesheets filling tutorial) :- https://youtu.be/jjii6mf9kc8?si=ZA6d1uDljx40h9gB
+        ECLIPSE SETUP :-    
+	  
+
+
+
+
+
+
+	  In order to start the aem we should open cmd in the aem instance folder
+	  TO CHANGE FROM C DRIVE TO D DRIVE
+	  cd /d folderlocation
+	  
+	  TO CHANGE FROM D DRIVE TO C DRIVE:-
+	  C:
+After switching to the C drive, you can then change the directory to C:\adobe using the cd command:
+cd \adobe
+	  
+	
