@@ -1,0 +1,248 @@
+package com.adobe.aem.mysite.site.core.models;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
+
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.resource.LoginException;
+import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.ResourceResolverFactory;
+import org.apache.sling.models.annotations.Model;
+import org.apache.sling.models.annotations.injectorspecific.OSGiService;
+import org.apache.sling.models.annotations.injectorspecific.Self;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.adobe.aem.mysite.site.core.filters.services.MyService;
+
+@Model(adaptables =SlingHttpServletRequest.class)
+public class MyModel {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MyModel.class);
+
+    @Self
+    private SlingHttpServletRequest request;
+
+    @OSGiService
+    private MyService myService;
+
+    @OSGiService
+    private ResourceResolverFactory resolverFactory;
+
+    private ResourceResolver resolver;
+
+    private String propertyId;
+        
+   
+    private Map<String, String> carMake = new HashMap<>();
+
+    public String getCarMake() {
+        return myService.carMake;
+    }
+    
+    
+
+    private Map<String, String> carModel = new HashMap<>();
+
+    public String getCarModel() {
+        return myService.carModel;
+    }
+    
+    private Map<String, String> carYear = new HashMap<>();
+
+    public String getCarYear() {
+        return myService.carYear;
+    }
+    
+    
+    
+    
+    public String getPropertyId() {
+        return propertyId;
+    }
+
+
+    @PostConstruct
+    protected void init() {
+
+        // Retrieve the propertyId parameter from the request
+        propertyId = request.getParameter("propertyId");
+
+        if (propertyId != null && !propertyId.isEmpty()) {
+            LOG.info("Received request with propertyId: {}", propertyId);
+            // Add your logic here to process the request with the propertyId
+        } else {
+            LOG.error("No propertyId parameter found in the request");
+            // Handle the case where propertyId is not provided
+        }
+
+        try {
+            resolver = newResolver(resolverFactory);
+            LOG.info("Message with propertyId: {}", propertyId);
+            myService.performQuery(propertyId);
+            LOG.info("service calling done");
+            // Add your logic to handle the results of myService.performQuery
+
+        } catch (Exception e) {
+            LOG.error("Error occurred while processing the request", e);
+            // Handle the exception
+        }
+    }
+
+   
+    // Your other getter methods for properties and methods to handle the results from myService.performQuery
+
+    public static final String GEEKS_SERVICE_USER = "geeksserviceuser";
+
+    public ResourceResolver newResolver(ResourceResolverFactory resourceResolverFactory) throws LoginException {
+        final Map<String, Object> paramMap = new HashMap<String, Object>();
+        paramMap.put(ResourceResolverFactory.SUBSERVICE, GEEKS_SERVICE_USER);
+
+        // fetches the admin service resolver using service user.
+        ResourceResolver resolver = resourceResolverFactory.getServiceResourceResolver(paramMap);
+        return resolver;
+    }
+
+}
+---------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------
+package com.adobe.aem.mysite.site.core.filters.services;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+import javax.jcr.Node;
+import javax.jcr.Session;
+
+import org.apache.sling.api.resource.LoginException;
+import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.ResourceResolverFactory;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.day.cq.search.PredicateGroup;
+import com.day.cq.search.Query;
+import com.day.cq.search.QueryBuilder;
+import com.day.cq.search.result.SearchResult;
+ 
+@Component(service = MyService.class)
+public class MyService {
+ 
+	private static final Logger LOG = LoggerFactory.getLogger(MyService.class);
+ 
+	@Reference
+	private ResourceResolverFactory resourceResolverFactory;
+ 
+	@Reference
+	private QueryBuilder queryBuilder;
+
+	public String propertyId;
+	public String carMake;
+	public String carModel;
+	public String carYear;
+ 
+	
+ 
+	public void performQuery(String propertyId) {
+		LOG.info("inside the service method performQuery");
+		ResourceResolver resourceResolver = null;
+ 
+		try {
+			// Create service user session
+			// Map<String, Object> serviceUserParams = new HashMap<>();
+			// serviceUserParams.put(ResourceResolverFactory.SUBSERVICE, "myserviceuser");
+			resourceResolver = newResolver(resourceResolverFactory);// resourceResolverFactory.getServiceResourceResolver(serviceUserParams);
+ 
+			LOG.info("111");
+			// Create a query map
+			Map<String, String> map = new HashMap<>();
+			map.put("path", "/content/dam/mysite");
+			map.put("type", "dam:Asset");
+			map.put("property", "jcr:content/data/master/propertyId");
+			map.put("property.value", propertyId);
+			map.put("p.limit", "1"); // Limiting to 1 result
+ 
+			// Create the query
+			Query query = queryBuilder.createQuery(PredicateGroup.create(map), resourceResolver.adaptTo(Session.class));
+ 
+			LOG.info("222 ");
+			// Execute the query
+			SearchResult result = query.getResult();
+			LOG.info("333 " + result.getQueryStatement());
+			// Process the search results
+			Iterator<Resource> resourceIterator = result.getResources();
+			while (resourceIterator.hasNext()) {
+				Resource resource = resourceIterator.next();
+				// Process each resource
+				LOG.info("Found resource: {}", resource.getPath());
+				Node carNode = resource.adaptTo(Node.class);
+				carNode = carNode.getNode("jcr:content/data/master");
+		
+//				LOG.info("carNode path updated is : " + carNode.getPath());
+//				LOG.info("carMake is : " + carNode.getProperty("brand").getValue().getString());
+//				LOG.info("carMake is : " + carNode.getProperty("enginetype").getValue().getString());
+//				LOG.info("carMake is : " + carNode.getProperty("fueltype").getValue().getString());
+//				LOG.info("propertyId is : " + carNode.getProperty("propertyId").getValue().getString());
+				
+				carMake = carNode.getProperty("brand").getValue().getString();
+                carModel = carNode.getProperty("enginetype").getValue().getString();
+                carYear = carNode.getProperty("fueltype").getValue().getString();
+ 
+			}
+			LOG.info("444" + result.getQueryStatement());
+ 
+		} catch (Exception e) {
+			LOG.error("Error occurred while performing query", e);
+		} finally {
+			// Always close the ResourceResolver
+			if (resourceResolver != null && resourceResolver.isLive()) {
+				resourceResolver.close();
+			}
+		}
+	}
+ 
+	public static final String GEEKS_SERVICE_USER = "geeksserviceuser";
+ 
+	public ResourceResolver newResolver(ResourceResolverFactory resourceResolverFactory) throws LoginException {
+		final Map<String, Object> paramMap = new HashMap<String, Object>();
+		paramMap.put(ResourceResolverFactory.SUBSERVICE, GEEKS_SERVICE_USER);
+ 
+		// fetches the admin service resolver using service user.
+		ResourceResolver resolver = resourceResolverFactory.getServiceResourceResolver(paramMap);
+		return resolver;
+	}
+
+	public String getCarMake() {
+        return carMake;
+    }
+
+    public String getCarModel() {
+        return carModel;
+    }
+
+    public String getCarYear() {
+        return carYear;
+    }
+ 
+}
+--------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------
+<sly data-sly-use.usernameModel="com.adobe.aem.mysite.site.core.models.MyModel" />
+<div>Username: ${usernameModel.propertyId}</div>
+<div>Brand Name:${usernameModel.carMake}</div>
+<div>Engine Type: ${usernameModel.carModel} </div>
+<div> Fuel Type: ${usernameModel.carYear} </div>
+</div>
+-------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------
+http://localhost:4502/content/mysite/us/en/service_oklama_footer.html?propertyId=001
+
